@@ -93,73 +93,77 @@ export const DashboardStats: React.FC<Props> = ({ subscriptions, exchangeRate = 
         </TabsList>
         
         <TabsContent value="monthly">
-          <Card className="shadow-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+          <Card className="overflow-hidden shadow-2xl shadow-zinc-200/50 dark:shadow-none border-none bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-300 text-white dark:text-zinc-900">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-500 shrink-0">本月預計總支出 (TWD)</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-widest opacity-80">本月預計總支出 (TWD)</CardTitle>
               <div className="flex items-center gap-3">
-                <div className="flex text-xs text-zinc-500 items-center gap-1.5 font-medium border border-zinc-200 dark:border-zinc-800 rounded-md px-2 py-1">
-                  即時匯率: 1 USD = 
+                <div className="flex text-[10px] items-center gap-1.5 font-bold border border-white/20 dark:border-black/20 rounded-full px-2.5 py-1 bg-white/10 dark:bg-black/5 backdrop-blur-md">
+                   USDRate:
                   <input 
                     type="number" 
                     value={exchangeRate || ''} 
                     onChange={(e) => setExchangeRate?.(Number(e.target.value))}
-                    className="w-12 bg-transparent text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:bg-zinc-100 dark:focus:bg-zinc-800 focus:outline-none rounded pl-1 pr-0 py-0.5"
+                    className="w-10 bg-transparent text-white dark:text-zinc-900 font-black focus:outline-none text-center"
                     step="0.1"
                   />
-                  TWD
                 </div>
-                <Wallet className="w-4 h-4 text-zinc-400" />
+                <Wallet className="w-4 h-4 opacity-60" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold tracking-tight py-4">NT$ {monthlyTotal.toLocaleString()}</div>
-              <div className="flex gap-4 text-sm mt-2 text-gray-600 dark:text-gray-400">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">台幣:</span>
-                  <span>NT$ {monthlyTwd.toLocaleString()}</span>
+              <div className="text-5xl font-black tracking-tighter py-6 flex items-baseline gap-2">
+                <span className="text-2xl opacity-60">NT$</span>
+                {monthlyTotal.toLocaleString()}
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="bg-white/10 dark:bg-black/5 p-3 rounded-2xl backdrop-blur-sm border border-white/10 dark:border-black/5">
+                   <div className="text-[10px] font-bold opacity-60 uppercase mb-1">台幣項目</div>
+                   <div className="font-bold text-lg">NT$ {monthlyTwd.toLocaleString()}</div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">美金:</span>
-                  <span>$ {monthlyUsd.toLocaleString()}</span>
+                <div className="bg-white/10 dark:bg-black/5 p-3 rounded-2xl backdrop-blur-sm border border-white/10 dark:border-black/5">
+                   <div className="text-[10px] font-bold opacity-60 uppercase mb-1">美金項目</div>
+                   <div className="font-bold text-lg">$ {monthlyUsd.toLocaleString()}</div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-3">包含所有月訂閱與年訂閱的分攤。</p>
+              <p className="text-[10px] opacity-50 mt-4 font-medium italic">包含所有訂閱項目的每月平攤額度</p>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="yearly">
-          <Card className="shadow-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+          <Card className="overflow-hidden shadow-2xl shadow-zinc-200/50 dark:shadow-none border-none bg-gradient-to-br from-indigo-900 to-violet-900 dark:from-indigo-100 dark:to-violet-200 text-white dark:text-indigo-950">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-500 shrink-0">年度預估總支出 (TWD)</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-widest opacity-80">年度預估總支出 (TWD)</CardTitle>
               <div className="flex items-center gap-3">
-                <div className="flex text-xs text-zinc-500 items-center gap-1.5 font-medium border border-zinc-200 dark:border-zinc-800 rounded-md px-2 py-1">
-                  即時匯率: 1 USD = 
+                <div className="flex text-[10px] items-center gap-1.5 font-bold border border-white/20 dark:border-black/20 rounded-full px-2.5 py-1 bg-white/10 dark:bg-black/5 backdrop-blur-md">
+                   USDRate:
                   <input 
                     type="number" 
                     value={exchangeRate || ''} 
                     onChange={(e) => setExchangeRate?.(Number(e.target.value))}
-                    className="w-12 bg-transparent text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:bg-zinc-100 dark:focus:bg-zinc-800 focus:outline-none rounded pl-1 pr-0 py-0.5"
+                    className="w-10 bg-transparent text-white dark:text-indigo-950 font-black focus:outline-none text-center"
                     step="0.1"
                   />
-                  TWD
                 </div>
-                <CreditCard className="w-4 h-4 text-zinc-400" />
+                <CreditCard className="w-4 h-4 opacity-60" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold tracking-tight py-4">NT$ {yearlyTotal.toLocaleString()}</div>
-              <div className="flex gap-4 text-sm mt-2 text-gray-600 dark:text-gray-400">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">台幣:</span>
-                  <span>NT$ {yearlyTwd.toLocaleString()}</span>
+              <div className="text-5xl font-black tracking-tighter py-6 flex items-baseline gap-2">
+                <span className="text-2xl opacity-60">NT$</span>
+                {yearlyTotal.toLocaleString()}
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="bg-white/10 dark:bg-black/5 p-3 rounded-2xl backdrop-blur-sm border border-white/10 dark:border-black/5">
+                   <div className="text-[10px] font-bold opacity-60 uppercase mb-1">台幣年度</div>
+                   <div className="font-bold text-lg">NT$ {yearlyTwd.toLocaleString()}</div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">美金:</span>
-                  <span>$ {yearlyUsd.toLocaleString()}</span>
+                <div className="bg-white/10 dark:bg-black/5 p-3 rounded-2xl backdrop-blur-sm border border-white/10 dark:border-black/5">
+                   <div className="text-[10px] font-bold opacity-60 uppercase mb-1">美金年度</div>
+                   <div className="font-bold text-lg">$ {yearlyUsd.toLocaleString()}</div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-3">目前有效訂閱的年化總支出，供長期預算規劃與檢視。</p>
+              <p className="text-[10px] opacity-50 mt-4 font-medium italic">目前所有有效訂閱項目的年化總計</p>
             </CardContent>
           </Card>
         </TabsContent>

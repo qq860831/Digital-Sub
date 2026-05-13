@@ -34,25 +34,29 @@ export const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
-      <Card className="w-full max-w-md shadow-lg border-gray-100 dark:border-gray-800">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-             <div className="p-3 bg-zinc-900 dark:bg-white rounded-xl">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-zinc-900"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4 font-sans">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,0,0,0.05),transparent)] dark:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.05),transparent)] pointer-events-none"></div>
+      <Card className="w-full max-w-md shadow-2xl shadow-zinc-200/50 dark:shadow-none border-none bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden">
+        <div className="h-2 w-full bg-gradient-to-r from-zinc-900 via-zinc-400 to-zinc-900 dark:from-white dark:via-zinc-500 dark:to-white"></div>
+        <CardHeader className="space-y-4 text-center pt-10 pb-6">
+          <div className="flex justify-center">
+             <div className="p-4 bg-zinc-900 dark:bg-white rounded-[1.5rem] shadow-xl rotate-3 hover:rotate-0 transition-transform duration-500">
+               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-zinc-900"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
              </div>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            {isSignUp ? '建立新帳號' : '歡迎回來'}
-          </CardTitle>
-          <CardDescription>
-            {isSignUp ? '開始管理您的數位訂閱支出' : '登入以存取您的訂閱庫'}
-          </CardDescription>
+          <div className="space-y-2">
+            <CardTitle className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white">
+              {isSignUp ? '建立新帳號' : '歡迎回來'}
+            </CardTitle>
+            <CardDescription className="text-sm font-medium opacity-60">
+              {isSignUp ? '開始管理您的數位訂閱支出' : '登入以存取您的訂閱庫'}
+            </CardDescription>
+          </div>
         </CardHeader>
         <form onSubmit={handleAuth}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 px-8">
             <div className="space-y-2">
-              <Label htmlFor="email">電子郵件</Label>
+              <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest opacity-50 ml-1">電子郵件</Label>
               <Input 
                 id="email" 
                 type="email" 
@@ -60,28 +64,31 @@ export const Auth: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 
+                className="rounded-2xl border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 h-12 px-4 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">密碼</Label>
+              <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest opacity-50 ml-1">密碼</Label>
               <Input 
                 id="password" 
                 type="password" 
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
+                className="rounded-2xl border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 h-12 px-4 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" type="submit" disabled={loading}>
-              {loading ? '處理中...' : (isSignUp ? '註冊' : '登入')}
+          <CardFooter className="flex flex-col gap-6 px-8 pb-10 pt-4">
+            <Button className="w-full h-12 rounded-2xl font-bold text-base shadow-lg shadow-zinc-900/10 dark:shadow-none hover:scale-[1.02] active:scale-[0.98] transition-all" type="submit" disabled={loading}>
+              {loading ? '處理中...' : (isSignUp ? '立即註冊' : '登入帳號')}
             </Button>
-            <div className="text-sm text-center text-gray-500">
-              {isSignUp ? '已經有帳號了？' : '還沒有帳號？'}{' '}
+            <div className="text-sm text-center font-medium">
+              <span className="opacity-40">{isSignUp ? '已經有帳號了？' : '還沒有帳號？'}</span>{' '}
               <button 
                 type="button"
-                className="text-zinc-900 dark:text-white font-medium hover:underline"
+                className="text-zinc-900 dark:text-white font-bold hover:underline"
                 onClick={() => setIsSignUp(!isSignUp)}
               >
                 {isSignUp ? '點此登入' : '點此註冊'}

@@ -17,7 +17,20 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 
 
-export const Dashboard: React.FC = () => {
+import { User } from '@supabase/supabase-js';
+import { Auth } from './Auth';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+
+interface DashboardProps {
+  user: User | null;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [exchangeRate, setExchangeRate] = useState<number>(32.5);
@@ -35,18 +48,26 @@ export const Dashboard: React.FC = () => {
       .catch(err => console.error('Failed to fetch exchange rate', err));
   }, []);
 
-  const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
-
   const fetchSubscriptions = async () => {
     setLoading(true);
+    if (!user) {
+      const localData = localStorage.getItem('subscriptions');
+      if (localData) {
+        setSubscriptions(JSON.parse(localData));
+      }
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('subscriptions')
       .select('*')
+      .eq('user_id', user.id)
       .order('next_billing_date', { ascending: true });
 
     if (error) {
-      toast.error('無法讀取資料');
-      console.error(error);
+      // 靜默處理讀取錯誤，避免彈窗干擾
+      console.error('Fetch error:', error);
     } else if (data) {
       if (data.length === 0) {
         // 如果資料庫是空的，自動恢復原始資料
@@ -62,8 +83,7 @@ export const Dashboard: React.FC = () => {
           currency: item.currency,
           nextBillingDate: item.next_billing_date,
           notes: item.notes,
-          status: item.status,
-          user_id: item.user_id
+          status: item.status
         }));
         setSubscriptions(mappedData);
       }
@@ -73,19 +93,20 @@ export const Dashboard: React.FC = () => {
 
   const autoSeedData = async () => {
     const MOCK_DATA = [
-      { name: 'Netflix', category: '影音娛樂', billing_cycle: 'monthly', amount: 390, currency: 'TWD', start_date: '2025-12-15', next_billing_date: '2026-05-15', status: 'active', user_id: GUEST_USER_ID },
-      { name: 'ChatGPT Plus', category: '程式軟體', billing_cycle: 'monthly', amount: 20, currency: 'USD', start_date: '2026-03-13', next_billing_date: '2026-05-16', status: 'active', user_id: GUEST_USER_ID },
-      { name: 'Spotify', category: '影音娛樂', billing_cycle: 'monthly', amount: 149, currency: 'TWD', start_date: '2025-07-28', next_billing_date: '2026-05-28', status: 'active', user_id: GUEST_USER_ID },
-      { name: 'AWS', category: '程式軟體', billing_cycle: 'monthly', amount: 15, currency: 'USD', start_date: '2025-05-01', next_billing_date: '2026-06-01', status: 'active', user_id: GUEST_USER_ID },
-      { name: '1Password', category: '日常生活', billing_cycle: 'yearly', amount: 35.88, currency: 'USD', start_date: '2026-04-15', next_billing_date: '2027-04-15', status: 'active', user_id: GUEST_USER_ID }
+      { name: 'Netflix', category: '影音娛樂', billing_cycle: 'monthly', amount: 390, currency: 'TWD', start_date: '2025-12-15', next_billing_date: '2026-05-15', status: 'active' },
+      { name: 'ChatGPT Plus', category: '程式軟體', billing_cycle: 'monthly', amount: 20, currency: 'USD', start_date: '2026-03-13', next_billing_date: '2026-05-16', status: 'active' },
+      { name: 'Spotify', category: '影音娛樂', billing_cycle: 'monthly', amount: 149, currency: 'TWD', start_date: '2025-07-28', next_billing_date: '2026-05-28', status: 'active' },
+      { name: 'AWS', category: '程式軟體', billing_cycle: 'monthly', amount: 15, currency: 'USD', start_date: '2025-05-01', next_billing_date: '2026-06-01', status: 'active' },
+      { name: '1Password', category: '日常生活', billing_cycle: 'yearly', amount: 35.88, currency: 'USD', start_date: '2026-04-15', next_billing_date: '2027-04-15', status: 'active' }
     ];
     
     const { error } = await supabase.from('subscriptions').insert(MOCK_DATA);
     if (!error) {
-      // 插入後再次讀取最新資料
+      // 成功後重新讀取
       const { data: newData } = await supabase
         .from('subscriptions')
         .select('*')
+        .eq('user_id', user.id)
         .order('next_billing_date', { ascending: true });
       
       if (newData) {
@@ -99,8 +120,7 @@ export const Dashboard: React.FC = () => {
           currency: item.currency,
           nextBillingDate: item.next_billing_date,
           notes: item.notes,
-          status: item.status,
-          user_id: item.user_id
+          status: item.status
         }));
         setSubscriptions(mappedData);
       }
@@ -109,8 +129,10 @@ export const Dashboard: React.FC = () => {
 
 
   useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+    if (user) {
+      fetchSubscriptions();
+    }
+  }, [user]);
 
   useEffect(() => {
     const migrateLocalData = async () => {
@@ -119,9 +141,10 @@ export const Dashboard: React.FC = () => {
         try {
           const subs = JSON.parse(localData);
           if (Array.isArray(subs) && subs.length > 0) {
-            toast.info('發現本地舊資料，正在同步至雲端...');
+            toast.info('正在遷移本地資料...');
             
             const toInsert = subs.map(sub => ({
+              user_id: user.id,
               name: sub.name,
               category: sub.category,
               billing_cycle: sub.cycle || sub.billing_cycle || 'monthly',
@@ -130,17 +153,12 @@ export const Dashboard: React.FC = () => {
               start_date: sub.startDate || sub.start_date || new Date().toISOString().split('T')[0],
               next_billing_date: sub.nextBillingDate || sub.next_billing_date || new Date().toISOString().split('T')[0],
               notes: sub.notes || '',
-              status: sub.status || 'active',
-              user_id: GUEST_USER_ID
+              status: sub.status || 'active'
             }));
 
             const { error } = await supabase.from('subscriptions').insert(toInsert);
             
-            if (error) {
-              console.error('Migration insert error:', error);
-              toast.error(`同步失敗: ${error.message}`);
-            } else {
-              toast.success('同步完成！');
+            if (!error) {
               localStorage.removeItem('subscriptions');
               fetchSubscriptions();
             }
@@ -172,10 +190,24 @@ export const Dashboard: React.FC = () => {
   }, [subscriptions, orderMonthFilter]);
 
   const handleAddSubscription = async (newSub: Omit<Subscription, 'id' | 'status'>) => {
+    if (!user) {
+      const guestSub: Subscription = {
+        ...newSub,
+        id: crypto.randomUUID(),
+        status: 'active'
+      };
+      const updatedList = [guestSub, ...subscriptions];
+      setSubscriptions(updatedList);
+      localStorage.setItem('subscriptions', JSON.stringify(updatedList));
+      toast.success('已新增訂閱 (儲存於本地)');
+      return;
+    }
+
     const { data, error } = await supabase
       .from('subscriptions')
       .insert([
         {
+          user_id: user.id,
           name: newSub.name,
           category: newSub.category,
           billing_cycle: newSub.cycle,
@@ -184,8 +216,7 @@ export const Dashboard: React.FC = () => {
           start_date: newSub.startDate,
           next_billing_date: newSub.nextBillingDate,
           notes: newSub.notes,
-          status: 'active',
-          user_id: GUEST_USER_ID
+          status: 'active'
         }
 
       ])
@@ -206,8 +237,7 @@ export const Dashboard: React.FC = () => {
         currency: inserted.currency,
         nextBillingDate: inserted.next_billing_date,
         notes: inserted.notes,
-        status: inserted.status,
-        user_id: inserted.user_id
+        status: inserted.status
       };
       setSubscriptions(prev => [mappedSub, ...prev]);
       toast.success('已新增訂閱');
@@ -216,6 +246,14 @@ export const Dashboard: React.FC = () => {
 
 
   const handleEditSubscription = async (updatedSub: Subscription) => {
+    if (!user) {
+      const updatedList = subscriptions.map(sub => sub.id === updatedSub.id ? updatedSub : sub);
+      setSubscriptions(updatedList);
+      localStorage.setItem('subscriptions', JSON.stringify(updatedList));
+      toast.success('已更新訂閱 (本地)');
+      return;
+    }
+
     const { error } = await supabase
       .from('subscriptions')
       .update({
@@ -241,6 +279,14 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleDeleteSubscription = async (id: string) => {
+    if (!user) {
+      const updatedList = subscriptions.filter(sub => sub.id !== id);
+      setSubscriptions(updatedList);
+      localStorage.setItem('subscriptions', JSON.stringify(updatedList));
+      toast.success('已刪除訂閱 (本地)');
+      return;
+    }
+
     const { error } = await supabase
       .from('subscriptions')
       .delete()
@@ -257,14 +303,44 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
-      <header className="relative flex flex-col items-center justify-center mb-10 gap-4 text-center mt-4">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center justify-center gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-repeat text-zinc-900 dark:text-white"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+      <header className="relative flex flex-col md:flex-row items-center justify-between mb-12 gap-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl p-6 rounded-3xl border border-white dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none mt-4">
+        <div className="flex flex-col items-center md:items-start gap-2">
+          <h1 className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white flex items-center gap-3">
+            <div className="p-2 bg-zinc-900 dark:bg-white rounded-xl shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-zinc-900"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+            </div>
             數位訂閱庫
           </h1>
+          {user ? (
+            <div className="flex items-center gap-2 mt-1">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 truncate max-w-[150px] sm:max-w-none">{user.email}</span>
+              <button 
+                onClick={() => supabase.auth.signOut()}
+                className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors ml-2"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mt-1">
+              <div className="w-2 h-2 rounded-full bg-zinc-300 animate-pulse"></div>
+              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">訪客模式 (未同步)</span>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-white hover:underline ml-2">
+                    登入以同步
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md p-0 border-none bg-transparent shadow-none">
+                  <Auth />
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </div>
-        <div className="w-full sm:w-auto md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2">
+        
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <SubscriptionForm onAdd={handleAddSubscription} exchangeRate={exchangeRate} />
         </div>
       </header>

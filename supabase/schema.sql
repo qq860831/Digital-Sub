@@ -13,13 +13,17 @@ CREATE TABLE subscriptions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE subscriptions 
+  ADD CONSTRAINT subscriptions_user_id_fkey 
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public access to subscriptions"
+CREATE POLICY "Users can manage their own subscriptions"
   ON subscriptions
   FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- user_settings 表格
 CREATE TABLE user_settings (
@@ -30,11 +34,11 @@ CREATE TABLE user_settings (
 
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public access to settings"
+CREATE POLICY "Users can manage their own settings"
   ON user_settings
   FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- RPC for calculating total monthly TWD
 CREATE OR REPLACE FUNCTION get_monthly_total_twd(target_user_id UUID)
