@@ -1,5 +1,6 @@
 export interface Subscription {
   id: string;
+  user_id?: string;
   name: string;
   startDate: string;
   category: string;

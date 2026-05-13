@@ -13,68 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
+import { LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-// 初始模擬資料 (實際專案中應自 Supabase 取得)
-const MOCK_SUBSCRIPTIONS: Subscription[] = [
-  {
-    id: '1',
-    name: 'Netflix',
-    startDate: format(addMonths(new Date(), -5), 'yyyy-MM-15'),
-    category: '影音娛樂',
-    cycle: 'monthly',
-    amount: 390,
-    currency: 'TWD',
-    nextBillingDate: format(addMonths(new Date(), 0), 'yyyy-MM-15'), // 這個月或下個月
-    status: 'active',
-  },
-  {
-    id: '2',
-    name: 'ChatGPT Plus',
-    startDate: format(addMonths(new Date(), -2), 'yyyy-MM-dd'),
-    category: '程式軟體',
-    cycle: 'monthly',
-    amount: 20,
-    currency: 'USD',
-    nextBillingDate: format(new Date(new Date().setDate(new Date().getDate() + 3)), 'yyyy-MM-dd'), // 3 天後 (觸發提醒)
-    status: 'active',
-  },
-  {
-    id: '3',
-    name: 'Spotify',
-    startDate: format(addMonths(new Date(), -10), 'yyyy-MM-28'),
-    category: '影音娛樂',
-    cycle: 'monthly',
-    amount: 149,
-    currency: 'TWD',
-    nextBillingDate: format(addMonths(new Date(), 0), 'yyyy-MM-28'),
-    status: 'active',
-  },
-  {
-    id: '4',
-    name: 'AWS',
-    startDate: format(addMonths(new Date(), -12), 'yyyy-MM-01'),
-    category: '程式軟體',
-    cycle: 'monthly',
-    amount: 15,
-    currency: 'USD',
-    nextBillingDate: format(addMonths(new Date(), 0), 'yyyy-MM-01'),
-    status: 'active',
-  },
-  {
-    id: '5',
-    name: '1Password',
-    startDate: format(addMonths(new Date(), -1), 'yyyy-MM-15'),
-    category: '日常生活',
-    cycle: 'yearly',
-    amount: 35.88,
-    currency: 'USD',
-    nextBillingDate: format(new Date(new Date().setMonth(new Date().getMonth() + 5)), 'yyyy-MM-dd'),
-    status: 'active',
-  }
-];
+interface Props {
+  user: User;
+}
 
-export const Dashboard: React.FC = () => {
+export const Dashboard: React.FC<Props> = ({ user }) => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [loading, setLoading] = useState(true);
   const [exchangeRate, setExchangeRate] = useState<number>(32.5);
   const [orderMonthFilter, setOrderMonthFilter] = useState<string>('all');
 
@@ -92,7 +42,32 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
-      setSubscriptions(MOCK_SUBSCRIPTIONS);
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .order('next_billing_date', { ascending: true });
+
+      if (error) {
+        toast.error('無法讀取資料');
+        console.error(error);
+      } else {
+        const mappedData = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          startDate: item.start_date,
+          category: item.category,
+          cycle: item.billing_cycle,
+          amount: item.amount,
+          currency: item.currency,
+          nextBillingDate: item.next_billing_date,
+          notes: item.notes,
+          status: item.status,
+          user_id: item.user_id
+        }));
+        setSubscriptions(mappedData);
+      }
+      setLoading(false);
     };
 
     fetchSubscriptions();
@@ -113,32 +88,104 @@ export const Dashboard: React.FC = () => {
     return subscriptions.filter(sub => sub.startDate && sub.startDate.startsWith(orderMonthFilter));
   }, [subscriptions, orderMonthFilter]);
 
-  const handleAddSubscription = (newSub: Omit<Subscription, 'id' | 'status'>) => {
-    const subscription: Subscription = {
-      ...newSub,
-      id: Math.random().toString(36).substr(2, 9),
-      status: 'active'
-    };
-    setSubscriptions(prev => [subscription, ...prev]);
+  const handleAddSubscription = async (newSub: Omit<Subscription, 'id' | 'status'>) => {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .insert([
+        {
+          name: newSub.name,
+          category: newSub.category,
+          billing_cycle: newSub.cycle,
+          amount: newSub.amount,
+          currency: newSub.currency,
+          start_date: newSub.startDate,
+          next_billing_date: newSub.nextBillingDate,
+          notes: newSub.notes,
+          user_id: user.id,
+          status: 'active'
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      toast.error('新增失敗');
+      console.error(error);
+    } else {
+      const mappedSub: Subscription = {
+        id: data.id,
+        name: data.name,
+        startDate: data.start_date,
+        category: data.category,
+        cycle: data.billing_cycle,
+        amount: data.amount,
+        currency: data.currency,
+        nextBillingDate: data.next_billing_date,
+        notes: data.notes,
+        status: data.status,
+        user_id: data.user_id
+      };
+      setSubscriptions(prev => [mappedSub, ...prev]);
+      toast.success('已新增訂閱');
+    }
   };
 
-  const handleEditSubscription = (updatedSub: Subscription) => {
-    setSubscriptions(prev => prev.map(sub => sub.id === updatedSub.id ? updatedSub : sub));
+  const handleEditSubscription = async (updatedSub: Subscription) => {
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({
+        name: updatedSub.name,
+        category: updatedSub.category,
+        billing_cycle: updatedSub.cycle,
+        amount: updatedSub.amount,
+        currency: updatedSub.currency,
+        start_date: updatedSub.startDate,
+        next_billing_date: updatedSub.nextBillingDate,
+        notes: updatedSub.notes,
+        status: updatedSub.status
+      })
+      .eq('id', updatedSub.id);
+
+    if (error) {
+      toast.error('更新失敗');
+      console.error(error);
+    } else {
+      setSubscriptions(prev => prev.map(sub => sub.id === updatedSub.id ? updatedSub : sub));
+      toast.success('已更新訂閱');
+    }
   };
 
-  const handleDeleteSubscription = (id: string) => {
-    setSubscriptions(prev => prev.filter(sub => sub.id !== id));
-    toast.success('已刪除訂閱');
+  const handleDeleteSubscription = async (id: string) => {
+    const { error } = await supabase
+      .from('subscriptions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error('刪除失敗');
+      console.error(error);
+    } else {
+      setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+      toast.success('已刪除訂閱');
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success('已登出');
   };
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
       <header className="relative flex flex-col items-center justify-center mb-10 gap-4 text-center mt-4">
-        <div>
+        <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center justify-center gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-repeat text-zinc-900 dark:text-white"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
             數位訂閱庫
           </h1>
+          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors">
+            <LogOut className="w-5 h-5" />
+          </Button>
         </div>
         <div className="w-full sm:w-auto md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2">
           <SubscriptionForm onAdd={handleAddSubscription} exchangeRate={exchangeRate} />

@@ -1,21 +1,14 @@
--- subscriptions 表格
-CREATE TYPE category_enum AS ENUM ('dev_tools', 'ai_tools', 'design', 'productivity', 'entertainment', 'investment', 'other');
-CREATE TYPE billing_cycle_enum AS ENUM ('monthly', 'yearly');
-CREATE TYPE currency_enum AS ENUM ('TWD', 'USD', 'JPY', 'EUR');
-CREATE TYPE status_enum AS ENUM ('active', 'cancelled');
-
 CREATE TABLE subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  icon TEXT NOT NULL,
-  category category_enum NOT NULL,
-  billing_cycle billing_cycle_enum NOT NULL,
+  category TEXT NOT NULL,
+  billing_cycle TEXT NOT NULL, -- 'monthly' | 'yearly'
   amount NUMERIC NOT NULL,
-  currency currency_enum NOT NULL,
+  currency TEXT NOT NULL, -- 'TWD' | 'USD'
+  start_date DATE NOT NULL,
   next_billing_date DATE NOT NULL,
-  payment_method TEXT NOT NULL,
-  status status_enum NOT NULL DEFAULT 'active',
+  status TEXT NOT NULL DEFAULT 'active', -- 'active' | 'cancelled'
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
