@@ -1,6 +1,6 @@
 CREATE TABLE subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID,
   name TEXT NOT NULL,
   category TEXT NOT NULL,
   billing_cycle TEXT NOT NULL, -- 'monthly' | 'yearly'
@@ -15,24 +15,26 @@ CREATE TABLE subscriptions (
 
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can only access their own subscriptions"
+CREATE POLICY "Allow public access to subscriptions"
   ON subscriptions
   FOR ALL
-  USING (auth.uid() = user_id);
+  USING (true)
+  WITH CHECK (true);
 
 -- user_settings 表格
 CREATE TABLE user_settings (
-  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY,
   exchange_rates JSONB NOT NULL DEFAULT '{"USD": 32.5, "JPY": 0.215, "EUR": 35.2, "TWD": 1}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can only access their own settings"
+CREATE POLICY "Allow public access to settings"
   ON user_settings
   FOR ALL
-  USING (auth.uid() = user_id);
+  USING (true)
+  WITH CHECK (true);
 
 -- RPC for calculating total monthly TWD
 CREATE OR REPLACE FUNCTION get_monthly_total_twd(target_user_id UUID)

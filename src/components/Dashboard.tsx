@@ -14,15 +14,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
-import { LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-interface Props {
-  user: User;
-}
-
-export const Dashboard: React.FC<Props> = ({ user }) => {
+export const Dashboard: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [exchangeRate, setExchangeRate] = useState<number>(32.5);
@@ -101,7 +94,6 @@ export const Dashboard: React.FC<Props> = ({ user }) => {
           start_date: newSub.startDate,
           next_billing_date: newSub.nextBillingDate,
           notes: newSub.notes,
-          user_id: user.id,
           status: 'active'
         }
       ])
@@ -170,11 +162,6 @@ export const Dashboard: React.FC<Props> = ({ user }) => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success('已登出');
-  };
-
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
       <header className="relative flex flex-col items-center justify-center mb-10 gap-4 text-center mt-4">
@@ -183,9 +170,6 @@ export const Dashboard: React.FC<Props> = ({ user }) => {
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-repeat text-zinc-900 dark:text-white"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
             數位訂閱庫
           </h1>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors">
-            <LogOut className="w-5 h-5" />
-          </Button>
         </div>
         <div className="w-full sm:w-auto md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2">
           <SubscriptionForm onAdd={handleAddSubscription} exchangeRate={exchangeRate} />
