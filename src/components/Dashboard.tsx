@@ -130,13 +130,15 @@ export const Dashboard: React.FC = () => {
               start_date: sub.startDate || sub.start_date || new Date().toISOString().split('T')[0],
               next_billing_date: sub.nextBillingDate || sub.next_billing_date || new Date().toISOString().split('T')[0],
               notes: sub.notes || '',
-              status: sub.status || 'active'
+              status: sub.status || 'active',
+              user_id: GUEST_USER_ID
             }));
 
             const { error } = await supabase.from('subscriptions').insert(toInsert);
             
             if (error) {
               console.error('Migration insert error:', error);
+              toast.error(`同步失敗: ${error.message}`);
             } else {
               toast.success('同步完成！');
               localStorage.removeItem('subscriptions');
@@ -148,6 +150,7 @@ export const Dashboard: React.FC = () => {
         }
       }
     };
+
     
     migrateLocalData();
   }, []);
