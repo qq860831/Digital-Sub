@@ -311,7 +311,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
             數位訂閱庫
           </h1>
-          {user ? (
+          {user && (
             <div className="flex items-center gap-2 mt-1">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
               <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 truncate max-w-[150px] sm:max-w-none">{user.email}</span>
@@ -322,23 +322,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 Sign Out
               </button>
             </div>
-          ) : (
-            <div className="flex items-center gap-2 mt-1">
-              <div className="w-2 h-2 rounded-full bg-zinc-300 animate-pulse"></div>
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">訪客模式 (未同步)</span>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <button className="text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-white hover:underline ml-2">
-                    登入以同步
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md p-0 border-none bg-transparent shadow-none">
-                  <Auth />
-                </DialogContent>
-              </Dialog>
-            </div>
           )}
         </div>
+
         
         <div className="flex items-center gap-4 w-full md:w-auto">
           <SubscriptionForm onAdd={handleAddSubscription} exchangeRate={exchangeRate} />
