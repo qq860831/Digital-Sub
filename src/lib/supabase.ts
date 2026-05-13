@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 此為範例：請在您的環境變數或 .env 檔案中設定對應的值
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';
+// 去除結尾的斜線以及可能誤加的 /rest/v1
+const supabaseUrl = rawUrl.replace(/\/$/, '').replace(/\/rest\/v1$/, '');
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+

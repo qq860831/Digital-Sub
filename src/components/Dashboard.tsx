@@ -33,38 +33,79 @@ export const Dashboard: React.FC = () => {
       .catch(err => console.error('Failed to fetch exchange rate', err));
   }, []);
 
+  const fetchSubscriptions = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .order('next_billing_date', { ascending: true });
+
+    if (error) {
+      toast.error('無法讀取資料');
+      console.error(error);
+    } else {
+      const mappedData = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        startDate: item.start_date,
+        category: item.category,
+        cycle: item.billing_cycle,
+        amount: item.amount,
+        currency: item.currency,
+        nextBillingDate: item.next_billing_date,
+        notes: item.notes,
+        status: item.status,
+        user_id: item.user_id
+      }));
+      setSubscriptions(mappedData);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchSubscriptions = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .order('next_billing_date', { ascending: true });
-
-      if (error) {
-        toast.error('無法讀取資料');
-        console.error(error);
-      } else {
-        const mappedData = data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          startDate: item.start_date,
-          category: item.category,
-          cycle: item.billing_cycle,
-          amount: item.amount,
-          currency: item.currency,
-          nextBillingDate: item.next_billing_date,
-          notes: item.notes,
-          status: item.status,
-          user_id: item.user_id
-        }));
-        setSubscriptions(mappedData);
-      }
-      setLoading(false);
-    };
-
     fetchSubscriptions();
   }, []);
+
+  useEffect(() => {
+    const migrateLocalData = async () => {
+      const localData = localStorage.getItem('subscriptions');
+      if (localData) {
+        try {
+          const subs = JSON.parse(localData);
+          if (Array.isArray(subs) && subs.length > 0) {
+            toast.info('發現本地舊資料，正在同步至雲端...');
+            
+            const toInsert = subs.map(sub => ({
+              name: sub.name,
+              category: sub.category,
+              billing_cycle: sub.cycle || sub.billing_cycle || 'monthly',
+              amount: sub.amount,
+              currency: sub.currency || 'TWD',
+              start_date: sub.startDate || sub.start_date || new Date().toISOString().split('T')[0],
+              next_billing_date: sub.nextBillingDate || sub.next_billing_date || new Date().toISOString().split('T')[0],
+              notes: sub.notes || '',
+              status: sub.status || 'active'
+            }));
+
+            const { error } = await supabase.from('subscriptions').insert(toInsert);
+            
+            if (error) {
+              console.error('Migration insert error:', error);
+            } else {
+              toast.success('同步完成！');
+              localStorage.removeItem('subscriptions');
+              fetchSubscriptions();
+            }
+          }
+        } catch (e) {
+          console.error('Migration failed', e);
+        }
+      }
+    };
+    
+    migrateLocalData();
+  }, []);
+
 
   const orderMonths = useMemo(() => {
     const months = new Set<string>();
