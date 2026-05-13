@@ -140,30 +140,31 @@ export const Dashboard: React.FC = () => {
           status: 'active'
         }
       ])
-      .select()
-      .single();
+      .select();
 
     if (error) {
-      toast.error('新增失敗');
-      console.error(error);
-    } else {
+      toast.error(`新增失敗: ${error.message}`);
+      console.error('Insert error:', error);
+    } else if (data && data.length > 0) {
+      const inserted = data[0];
       const mappedSub: Subscription = {
-        id: data.id,
-        name: data.name,
-        startDate: data.start_date,
-        category: data.category,
-        cycle: data.billing_cycle,
-        amount: data.amount,
-        currency: data.currency,
-        nextBillingDate: data.next_billing_date,
-        notes: data.notes,
-        status: data.status,
-        user_id: data.user_id
+        id: inserted.id,
+        name: inserted.name,
+        startDate: inserted.start_date,
+        category: inserted.category,
+        cycle: inserted.billing_cycle,
+        amount: inserted.amount,
+        currency: inserted.currency,
+        nextBillingDate: inserted.next_billing_date,
+        notes: inserted.notes,
+        status: inserted.status,
+        user_id: inserted.user_id
       };
       setSubscriptions(prev => [mappedSub, ...prev]);
       toast.success('已新增訂閱');
     }
   };
+
 
   const handleEditSubscription = async (updatedSub: Subscription) => {
     const { error } = await supabase
@@ -220,34 +221,7 @@ export const Dashboard: React.FC = () => {
       </header>
 
       <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-lg font-medium">訂閱分析與統計</h2>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={async () => {
-              const MOCK_DATA = [
-                { name: 'Netflix', category: '影音娛樂', billing_cycle: 'monthly', amount: 390, currency: 'TWD', start_date: '2025-12-15', next_billing_date: '2026-05-15', status: 'active' },
-                { name: 'ChatGPT Plus', category: '程式軟體', billing_cycle: 'monthly', amount: 20, currency: 'USD', start_date: '2026-03-13', next_billing_date: '2026-05-16', status: 'active' },
-                { name: 'Spotify', category: '影音娛樂', billing_cycle: 'monthly', amount: 149, currency: 'TWD', start_date: '2025-07-28', next_billing_date: '2026-05-28', status: 'active' },
-                { name: 'AWS', category: '程式軟體', billing_cycle: 'monthly', amount: 15, currency: 'USD', start_date: '2025-05-01', next_billing_date: '2026-06-01', status: 'active' },
-                { name: '1Password', category: '日常生活', billing_cycle: 'yearly', amount: 35.88, currency: 'USD', start_date: '2026-04-15', next_billing_date: '2027-04-15', status: 'active' }
-              ];
-              toast.info('正在復原原始資料...');
-              const { error } = await supabase.from('subscriptions').insert(MOCK_DATA);
-              if (error) {
-                toast.error('復原失敗');
-                console.error(error);
-              } else {
-                toast.success('原始資料已復原！');
-                fetchSubscriptions();
-              }
-            }}
-            className="text-xs h-8 border-dashed border-zinc-300 text-zinc-500 hover:text-zinc-900"
-          >
-            復原原始資料
-          </Button>
-        </div>
+        <h2 className="text-lg font-medium">訂閱分析與統計</h2>
         <Select value={orderMonthFilter} onValueChange={setOrderMonthFilter}>
 
           <SelectTrigger className="w-[180px]">

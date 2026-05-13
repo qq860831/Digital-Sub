@@ -155,13 +155,12 @@ export const SubscriptionForm: React.FC<Props> = ({
   const onSubmit = (data: any) => {
     if (initialData && onEdit) {
       onEdit({ ...initialData, ...data });
-      toast.success('已更新訂閱');
     } else if (onAdd) {
       onAdd(data as SubscriptionFormValues);
-      toast.success('已新增訂閱');
     }
     setOpen(false);
   };
+
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
