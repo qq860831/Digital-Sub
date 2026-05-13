@@ -303,33 +303,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
-      <header className="relative flex flex-col md:flex-row items-center justify-between mb-12 gap-6 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl p-6 rounded-3xl border border-white dark:border-zinc-800/50 shadow-xl shadow-zinc-200/20 dark:shadow-none mt-4">
-        <div className="flex flex-col items-center md:items-start gap-2">
-          <h1 className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white flex items-center gap-3">
-            <div className="p-2 bg-zinc-900 dark:bg-white rounded-xl shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-zinc-900"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
-            </div>
+      <header className="relative flex flex-col items-center justify-center mb-10 gap-4 text-center mt-4">
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-repeat text-zinc-900 dark:text-white"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
             數位訂閱庫
           </h1>
-          {user && (
-            <div className="flex items-center gap-2 mt-1">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 truncate max-w-[150px] sm:max-w-none">{user.email}</span>
-              <button 
-                onClick={() => supabase.auth.signOut()}
-                className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors ml-2"
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
         </div>
+        {user && (
+          <div className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            {user.email}
+            <button 
+              onClick={() => supabase.auth.signOut()}
+              className="ml-2 text-zinc-900 dark:text-white font-medium hover:underline border-l border-gray-300 dark:border-gray-600 pl-2"
+            >
+              登出
+            </button>
+          </div>
+        )}
 
-        
-        <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="w-full sm:w-auto md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2">
           <SubscriptionForm onAdd={handleAddSubscription} exchangeRate={exchangeRate} />
         </div>
       </header>
+
 
       <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
         <h2 className="text-lg font-medium">訂閱分析與統計</h2>

@@ -111,24 +111,25 @@ export const SubscriptionList: React.FC<Props> = ({ subscriptions, onDelete, onE
           </div>
         </CardHeader>
         <CardContent>
-          {/* 桌面端表格視圖 */}
-          <div className="hidden md:block overflow-x-auto w-full">
-            <Table>
+          <div className="overflow-x-auto w-full">
+            <Table className="min-w-[700px]">
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-b border-gray-100 dark:border-gray-800">
-                  <TableHead className="font-semibold text-zinc-900 dark:text-zinc-100">名稱</TableHead>
-                  <TableHead className="font-semibold text-zinc-900 dark:text-zinc-100">類別</TableHead>
-                  <TableHead className="font-semibold text-zinc-900 dark:text-zinc-100">費用</TableHead>
-                  <TableHead className="font-semibold text-zinc-900 dark:text-zinc-100">週期</TableHead>
-                  <TableHead className="font-semibold text-zinc-900 dark:text-zinc-100">下次扣款</TableHead>
-                  <TableHead className="font-semibold text-zinc-900 dark:text-zinc-100">狀態</TableHead>
+                <TableRow>
+                  <TableHead>名稱</TableHead>
+                  <TableHead>類別</TableHead>
+                  <TableHead>費用</TableHead>
+                  <TableHead>週期</TableHead>
+                  <TableHead>訂購日</TableHead>
+                  <TableHead>下次扣款</TableHead>
+                  <TableHead>備註</TableHead>
+                  <TableHead>狀態</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSubscriptions.length === 0 ? (
                    <TableRow>
-                     <TableCell colSpan={7} className="text-center py-12 text-gray-400">目前沒有符合條件的訂閱資料</TableCell>
+                     <TableCell colSpan={9} className="text-center py-8 text-gray-400">目前沒有符合條件的訂閱資料</TableCell>
                    </TableRow>
                 ) : filteredSubscriptions.map(sub => {
                   const isCancelled = sub.status === 'cancelled';
@@ -139,37 +140,42 @@ export const SubscriptionList: React.FC<Props> = ({ subscriptions, onDelete, onE
                   const isOverdue = !isCancelled && daysUntilBilling < 0;
 
                   return (
-                    <TableRow key={sub.id} className={`${isCancelled ? 'opacity-60 grayscale-[0.5]' : ''} transition-colors`}>
-                      <TableCell className="font-semibold text-zinc-900 dark:text-white">
+                    <TableRow key={sub.id} className={isCancelled ? 'opacity-50' : ''}>
+                      <TableCell className="font-medium">
                         {sub.name}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`font-medium px-2.5 py-0.5 rounded-full ${getCategoryColor(sub.category)}`}>{sub.category}</Badge>
+                        <Badge variant="outline" className={`font-normal text-xs ${getCategoryColor(sub.category)}`}>{sub.category}</Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-zinc-900 dark:text-white">{sub.amount.toLocaleString()}</span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">{sub.currency}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono">{sub.amount}</span>
+                          <span className="text-xs text-zinc-500">{sub.currency}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                        <span className="text-sm text-zinc-600 capitalize">
                           {sub.cycle === 'monthly' ? '月繳' : '年繳'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium">
+                        <span className="text-sm">
+                          {sub.startDate || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">
                             {format(nextBillingDate, 'yyyy-MM-dd')}
                           </span>
                           {isUpcoming && (
-                            <div className="flex items-center text-amber-600 text-[10px] font-bold gap-1 uppercase tracking-wider">
+                            <div className="flex items-center text-amber-700 text-xs font-medium gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shadow-sm dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800">
                               <AlertCircle className="w-3 h-3" />
                               剩 {daysUntilBilling} 天
                             </div>
                           )}
                           {isOverdue && (
-                            <div className="flex items-center text-rose-600 text-[10px] font-bold gap-1 uppercase tracking-wider">
+                            <div className="flex items-center text-red-700 text-xs font-medium gap-1 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full shadow-sm dark:bg-red-900/20 dark:text-red-300 dark:border-red-800">
                               <AlertCircle className="w-3 h-3" />
                               逾期 {Math.abs(daysUntilBilling)} 天
                             </div>
@@ -177,31 +183,31 @@ export const SubscriptionList: React.FC<Props> = ({ subscriptions, onDelete, onE
                         </div>
                       </TableCell>
                       <TableCell>
+                        <span className="text-sm text-zinc-500 max-w-[150px] truncate block" title={sub.notes}>
+                          {sub.notes || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
                         {sub.status === 'active' ? (
-                          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium text-sm">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                            使用中
-                          </div>
+                          <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 font-normal border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800 dark:hover:bg-emerald-900/20 shadow-sm">使用中</Badge>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500 font-medium text-sm">
-                            <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700"></div>
-                            已退訂
-                          </div>
+                          <Badge variant="secondary" className="font-normal border border-zinc-200 bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">已退訂</Badge>
                         )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger render={
-                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">選單</span>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           } />
-                          <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setEditingSub(sub)} className="cursor-pointer">
                               <Edit className="w-4 h-4 mr-2" />
                               編輯
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onDelete(sub.id)} className="text-rose-600 focus:text-rose-600 cursor-pointer">
+                            <DropdownMenuItem onClick={() => onDelete(sub.id)} className="text-red-600 focus:text-red-600 cursor-pointer">
                               <Trash2 className="w-4 h-4 mr-2" />
                               刪除
                             </DropdownMenuItem>
@@ -213,79 +219,6 @@ export const SubscriptionList: React.FC<Props> = ({ subscriptions, onDelete, onE
                 })}
               </TableBody>
             </Table>
-          </div>
-
-          {/* 手機端卡片視圖 */}
-          <div className="md:hidden space-y-4">
-            {filteredSubscriptions.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">目前沒有符合條件的訂閱資料</div>
-            ) : filteredSubscriptions.map(sub => {
-              const isCancelled = sub.status === 'cancelled';
-              const nextBillingDate = new Date(sub.nextBillingDate);
-              const daysUntilBilling = differenceInDays(nextBillingDate, new Date());
-              const isUpcoming = !isCancelled && daysUntilBilling >= 0 && daysUntilBilling <= 7;
-              const isOverdue = !isCancelled && daysUntilBilling < 0;
-
-              return (
-                <div 
-                  key={sub.id} 
-                  className={`p-4 rounded-2xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm relative overflow-hidden transition-all active:scale-[0.98] ${isCancelled ? 'opacity-60 grayscale-[0.5]' : ''}`}
-                  onClick={() => setEditingSub(sub)}
-                >
-                  {/* 狀態條 */}
-                  <div className={`absolute top-0 left-0 w-1 h-full ${isCancelled ? 'bg-zinc-300 dark:bg-zinc-700' : isOverdue ? 'bg-rose-500' : isUpcoming ? 'bg-amber-500' : 'bg-zinc-900 dark:bg-white'}`}></div>
-                  
-                  <div className="flex justify-between items-start mb-3 pl-2">
-                    <div>
-                      <h3 className="font-bold text-zinc-900 dark:text-white text-lg">{sub.name}</h3>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className={`text-[10px] px-2 py-0 rounded-full ${getCategoryColor(sub.category)}`}>
-                          {sub.category}
-                        </Badge>
-                        <span className="text-[10px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
-                          {sub.cycle === 'monthly' ? '月繳' : '年繳'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <span className="font-black text-xl text-zinc-900 dark:text-white">{sub.amount.toLocaleString()}</span>
-                        <span className="text-[10px] font-bold text-zinc-500">{sub.currency}</span>
-                      </div>
-                      <div className="text-[10px] text-zinc-400 mt-0.5">
-                        {format(nextBillingDate, 'yyyy-MM-dd')} 扣款
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center pl-2 pt-2 border-t border-gray-50 dark:border-zinc-800/50">
-                    <div className="flex items-center gap-2">
-                      {isUpcoming && (
-                        <span className="text-amber-600 text-[10px] font-bold flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" /> 剩 {daysUntilBilling} 天
-                        </span>
-                      )}
-                      {isOverdue && (
-                        <span className="text-rose-600 text-[10px] font-bold flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" /> 逾期 {Math.abs(daysUntilBilling)} 天
-                        </span>
-                      )}
-                      {!isUpcoming && !isOverdue && !isCancelled && (
-                        <span className="text-emerald-600 text-[10px] font-bold flex items-center gap-1">
-                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> 使用中
-                        </span>
-                      )}
-                    </div>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-full" onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(sub.id);
-                    }}>
-                      <Trash2 className="w-3.5 h-3.5 text-zinc-400" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </CardContent>
       </Card>
