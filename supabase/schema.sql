@@ -13,17 +13,17 @@ CREATE TABLE subscriptions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE subscriptions 
-  ADD CONSTRAINT subscriptions_user_id_fkey 
-  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+-- 移除外鍵約束以支援公用 ID (00000000-0000-0000-0000-000000000000 不存在於 auth.users)
+-- ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS subscriptions_user_id_fkey;
 
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage their own subscriptions"
+CREATE POLICY "Allow public sync for global ID"
   ON subscriptions
   FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (user_id = '00000000-0000-0000-0000-000000000000' OR auth.uid() = user_id)
+  WITH CHECK (user_id = '00000000-0000-0000-0000-000000000000' OR auth.uid() = user_id);
+
 
 -- user_settings 表格
 CREATE TABLE user_settings (

@@ -30,11 +30,15 @@ interface DashboardProps {
   user: User | null;
 }
 
+const PUBLIC_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [exchangeRate, setExchangeRate] = useState<number>(32.5);
   const [orderMonthFilter, setOrderMonthFilter] = useState<string>('all');
+  
+  const effectiveUserId = user?.id || PUBLIC_USER_ID;
 
   useEffect(() => {
     // 取得即時匯率
@@ -50,19 +54,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   const fetchSubscriptions = async () => {
     setLoading(true);
-    if (!user) {
-      const localData = localStorage.getItem('subscriptions');
-      if (localData) {
-        setSubscriptions(JSON.parse(localData));
-      }
-      setLoading(false);
-      return;
-    }
-
     const { data, error } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', effectiveUserId)
       .order('next_billing_date', { ascending: true });
 
     if (error) {
@@ -93,45 +88,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   const autoSeedData = async () => {
     const MOCK_DATA = [
-      { name: 'Netflix', category: '影音娛樂', billing_cycle: 'monthly', amount: 390, currency: 'TWD', start_date: '2025-12-15', next_billing_date: '2026-05-15', status: 'active' },
-      { name: 'ChatGPT Plus', category: '程式軟體', billing_cycle: 'monthly', amount: 20, currency: 'USD', start_date: '2026-03-13', next_billing_date: '2026-05-16', status: 'active' },
-      { name: 'Spotify', category: '影音娛樂', billing_cycle: 'monthly', amount: 149, currency: 'TWD', start_date: '2025-07-28', next_billing_date: '2026-05-28', status: 'active' },
-      { name: 'AWS', category: '程式軟體', billing_cycle: 'monthly', amount: 15, currency: 'USD', start_date: '2025-05-01', next_billing_date: '2026-06-01', status: 'active' },
-      { name: '1Password', category: '日常生活', billing_cycle: 'yearly', amount: 35.88, currency: 'USD', start_date: '2026-04-15', next_billing_date: '2027-04-15', status: 'active' }
+      { user_id: effectiveUserId, name: 'Netflix', category: '影音娛樂', billing_cycle: 'monthly', amount: 390, currency: 'TWD', start_date: '2025-12-15', next_billing_date: '2026-05-15', status: 'active' },
+      { user_id: effectiveUserId, name: 'ChatGPT Plus', category: '程式軟體', billing_cycle: 'monthly', amount: 20, currency: 'USD', start_date: '2026-03-13', next_billing_date: '2026-05-16', status: 'active' },
+      { user_id: effectiveUserId, name: 'Spotify', category: '影音娛樂', billing_cycle: 'monthly', amount: 149, currency: 'TWD', start_date: '2025-07-28', next_billing_date: '2026-05-28', status: 'active' },
+      { user_id: effectiveUserId, name: 'AWS', category: '程式軟體', billing_cycle: 'monthly', amount: 15, currency: 'USD', start_date: '2025-05-01', next_billing_date: '2026-06-01', status: 'active' },
+      { user_id: effectiveUserId, name: '1Password', category: '日常生活', billing_cycle: 'yearly', amount: 35.88, currency: 'USD', start_date: '2026-04-15', next_billing_date: '2027-04-15', status: 'active' }
     ];
     
     const { error } = await supabase.from('subscriptions').insert(MOCK_DATA);
     if (!error) {
       // 成功後重新讀取
-      const { data: newData } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('next_billing_date', { ascending: true });
-      
-      if (newData) {
-        const mappedData = newData.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          startDate: item.start_date,
-          category: item.category,
-          cycle: item.billing_cycle,
-          amount: item.amount,
-          currency: item.currency,
-          nextBillingDate: item.next_billing_date,
-          notes: item.notes,
-          status: item.status
-        }));
-        setSubscriptions(mappedData);
-      }
+      fetchSubscriptions();
     }
   };
 
 
   useEffect(() => {
-    if (user) {
-      fetchSubscriptions();
-    }
+    fetchSubscriptions();
   }, [user]);
 
   useEffect(() => {
@@ -190,24 +163,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   }, [subscriptions, orderMonthFilter]);
 
   const handleAddSubscription = async (newSub: Omit<Subscription, 'id' | 'status'>) => {
-    if (!user) {
-      const guestSub: Subscription = {
-        ...newSub,
-        id: crypto.randomUUID(),
-        status: 'active'
-      };
-      const updatedList = [guestSub, ...subscriptions];
-      setSubscriptions(updatedList);
-      localStorage.setItem('subscriptions', JSON.stringify(updatedList));
-      toast.success('已新增訂閱 (儲存於本地)');
-      return;
-    }
-
     const { data, error } = await supabase
       .from('subscriptions')
       .insert([
         {
-          user_id: user.id,
+          user_id: effectiveUserId,
           name: newSub.name,
           category: newSub.category,
           billing_cycle: newSub.cycle,
@@ -218,7 +178,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           notes: newSub.notes,
           status: 'active'
         }
-
       ])
       .select();
 
@@ -246,13 +205,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
 
   const handleEditSubscription = async (updatedSub: Subscription) => {
-    if (!user) {
-      const updatedList = subscriptions.map(sub => sub.id === updatedSub.id ? updatedSub : sub);
-      setSubscriptions(updatedList);
-      localStorage.setItem('subscriptions', JSON.stringify(updatedList));
-      toast.success('已更新訂閱 (本地)');
-      return;
-    }
 
     const { error } = await supabase
       .from('subscriptions')
@@ -267,7 +219,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         notes: updatedSub.notes,
         status: updatedSub.status
       })
-      .eq('id', updatedSub.id);
+      .eq('id', updatedSub.id)
+      .eq('user_id', effectiveUserId);
 
     if (error) {
       toast.error('更新失敗');
@@ -279,18 +232,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   };
 
   const handleDeleteSubscription = async (id: string) => {
-    if (!user) {
-      const updatedList = subscriptions.filter(sub => sub.id !== id);
-      setSubscriptions(updatedList);
-      localStorage.setItem('subscriptions', JSON.stringify(updatedList));
-      toast.success('已刪除訂閱 (本地)');
-      return;
-    }
-
     const { error } = await supabase
       .from('subscriptions')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', effectiveUserId);
 
     if (error) {
       toast.error('刪除失敗');
