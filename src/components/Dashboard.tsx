@@ -35,6 +35,8 @@ export const Dashboard: React.FC = () => {
       .catch(err => console.error('Failed to fetch exchange rate', err));
   }, []);
 
+  const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
+
   const fetchSubscriptions = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -45,24 +47,66 @@ export const Dashboard: React.FC = () => {
     if (error) {
       toast.error('無法讀取資料');
       console.error(error);
-    } else {
-      const mappedData = data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        startDate: item.start_date,
-        category: item.category,
-        cycle: item.billing_cycle,
-        amount: item.amount,
-        currency: item.currency,
-        nextBillingDate: item.next_billing_date,
-        notes: item.notes,
-        status: item.status,
-        user_id: item.user_id
-      }));
-      setSubscriptions(mappedData);
+    } else if (data) {
+      if (data.length === 0) {
+        // 如果資料庫是空的，自動恢復原始資料
+        await autoSeedData();
+      } else {
+        const mappedData = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          startDate: item.start_date,
+          category: item.category,
+          cycle: item.billing_cycle,
+          amount: item.amount,
+          currency: item.currency,
+          nextBillingDate: item.next_billing_date,
+          notes: item.notes,
+          status: item.status,
+          user_id: item.user_id
+        }));
+        setSubscriptions(mappedData);
+      }
     }
     setLoading(false);
   };
+
+  const autoSeedData = async () => {
+    const MOCK_DATA = [
+      { name: 'Netflix', category: '影音娛樂', billing_cycle: 'monthly', amount: 390, currency: 'TWD', start_date: '2025-12-15', next_billing_date: '2026-05-15', status: 'active', user_id: GUEST_USER_ID },
+      { name: 'ChatGPT Plus', category: '程式軟體', billing_cycle: 'monthly', amount: 20, currency: 'USD', start_date: '2026-03-13', next_billing_date: '2026-05-16', status: 'active', user_id: GUEST_USER_ID },
+      { name: 'Spotify', category: '影音娛樂', billing_cycle: 'monthly', amount: 149, currency: 'TWD', start_date: '2025-07-28', next_billing_date: '2026-05-28', status: 'active', user_id: GUEST_USER_ID },
+      { name: 'AWS', category: '程式軟體', billing_cycle: 'monthly', amount: 15, currency: 'USD', start_date: '2025-05-01', next_billing_date: '2026-06-01', status: 'active', user_id: GUEST_USER_ID },
+      { name: '1Password', category: '日常生活', billing_cycle: 'yearly', amount: 35.88, currency: 'USD', start_date: '2026-04-15', next_billing_date: '2027-04-15', status: 'active', user_id: GUEST_USER_ID }
+    ];
+    
+    const { error } = await supabase.from('subscriptions').insert(MOCK_DATA);
+    if (!error) {
+      // 插入後再次讀取最新資料
+      const { data: newData } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .order('next_billing_date', { ascending: true });
+      
+      if (newData) {
+        const mappedData = newData.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          startDate: item.start_date,
+          category: item.category,
+          cycle: item.billing_cycle,
+          amount: item.amount,
+          currency: item.currency,
+          nextBillingDate: item.next_billing_date,
+          notes: item.notes,
+          status: item.status,
+          user_id: item.user_id
+        }));
+        setSubscriptions(mappedData);
+      }
+    }
+  };
+
 
   useEffect(() => {
     fetchSubscriptions();
@@ -137,8 +181,10 @@ export const Dashboard: React.FC = () => {
           start_date: newSub.startDate,
           next_billing_date: newSub.nextBillingDate,
           notes: newSub.notes,
-          status: 'active'
+          status: 'active',
+          user_id: GUEST_USER_ID
         }
+
       ])
       .select();
 
